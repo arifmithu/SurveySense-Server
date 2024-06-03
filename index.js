@@ -3,6 +3,7 @@ require("dotenv").config();
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
+const moment = require("moment");
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -64,6 +65,12 @@ async function run() {
       res.send(result);
     });
 
+    // get all surveys
+    app.get("/surveys", async (req, res) => {
+      const result = await surveyCollections.find().toArray();
+      res.send(result);
+    });
+
     // get surveys of specific surveyor
     app.get("/surveys/:email", async (req, res) => {
       const email = req.params.email;
@@ -81,7 +88,7 @@ async function run() {
     });
 
     // update survey by id
-    app.put("surveys/update/:id", async (req, res) => {
+    app.put("/surveys/update/:id", async (req, res) => {
       const id = req.params.id;
       const survey = req.body;
       const query = { _id: new ObjectId(id) };
@@ -101,6 +108,7 @@ async function run() {
         },
       };
       const result = await surveyCollections.updateOne(query, updatedSurvey);
+      res.send(result);
     });
 
     // Send a ping to confirm a successful connection
