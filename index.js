@@ -37,10 +37,20 @@ async function run() {
       res.send({ token });
     });
 
+    //  ------------------user related api----------------
     // post user
     app.post("/users", async (req, res) => {
       const user = req.body;
+      console.log(user, "user");
       const result = await userCollections.insertOne(user);
+      res.send(result);
+    });
+    // get user role
+    app.get("/users/:email", async (req, res) => {
+      const loggedEmail = req.params.email;
+      console.log("inside email api");
+      const query = { email: loggedEmail };
+      const result = await userCollections.findOne(query);
       res.send(result);
     });
 
@@ -49,6 +59,14 @@ async function run() {
     app.post("/surveys", async (req, res) => {
       const survey = req.body;
       const result = await surveyCollections.insertOne(survey);
+      res.send(result);
+    });
+
+    // get surveys of specific surveyor
+    app.get("/surveys/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await surveyCollections.find(query).toArray();
       res.send(result);
     });
 
