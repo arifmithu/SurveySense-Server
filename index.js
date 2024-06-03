@@ -2,7 +2,7 @@ const express = require("express");
 require("dotenv").config();
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -58,7 +58,8 @@ async function run() {
     // post new survey to the database
     app.post("/surveys", async (req, res) => {
       const survey = req.body;
-      const result = await surveyCollections.insertOne(survey);
+      const finalSurvey = { ...survey, status: "published" };
+      const result = await surveyCollections.insertOne(finalSurvey);
       res.send(result);
     });
 
@@ -67,6 +68,14 @@ async function run() {
       const email = req.params.email;
       const query = { email: email };
       const result = await surveyCollections.find(query).toArray();
+      res.send(result);
+    });
+
+    // get survey by id
+    app.get("/response/:id", async (res, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await surveyCollections.findOne(query);
       res.send(result);
     });
 
