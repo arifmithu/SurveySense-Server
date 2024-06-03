@@ -58,7 +58,8 @@ async function run() {
     // post new survey to the database
     app.post("/surveys", async (req, res) => {
       const survey = req.body;
-      const finalSurvey = { ...survey, status: "published" };
+      const created = moment().format("MM/DD/YYYY");
+      const finalSurvey = { ...survey, status: "published", created: created };
       const result = await surveyCollections.insertOne(finalSurvey);
       res.send(result);
     });
@@ -72,11 +73,34 @@ async function run() {
     });
 
     // get survey by id
-    app.get("/response/:id", async (res, res) => {
+    app.get("/response/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await surveyCollections.findOne(query);
       res.send(result);
+    });
+
+    // update survey by id
+    app.put("surveys/update/:id", async (req, res) => {
+      const id = req.params.id;
+      const survey = req.body;
+      const query = { _id: new ObjectId(id) };
+      const updatedSurvey = {
+        $set: {
+          surveyName: survey.surveyName,
+          title: survey.title,
+          description: survey.description,
+          options: survey.options,
+          category: survey.category,
+          deadline: survey.deadline,
+          email: survey.email,
+          response: survey.response,
+          feedback: survey.feedback,
+          status: survey.status,
+          created: survey.created,
+        },
+      };
+      const result = await surveyCollections.updateOne(query, updatedSurvey);
     });
 
     // Send a ping to confirm a successful connection
