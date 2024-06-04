@@ -29,6 +29,7 @@ async function run() {
     const surveyCollections = client.db("SurveySense").collection("Surveys");
     const userCollections = client.db("SurveySense").collection("Users");
     const reportCollections = client.db("SurveySense").collection("Reports");
+    const commentCollections = client.db("SurveySense").collection("Comments");
 
     //  ------------------jwt related api----------------
     app.post("/jwt", async (req, res) => {
@@ -154,14 +155,21 @@ async function run() {
     app.get("/surveys/reported/:email", async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
-      const result = await reportCollections.find(query).toArray();
+      const reports = await reportCollections.find(query).toArray();
       const reportedSurveys = [];
-      for (const e of result) {
+      for (const e of reports) {
         const cursor = { _id: new ObjectId(e.postId) };
         const survey = await surveyCollections.findOne(cursor);
         reportedSurveys.push(survey);
       }
-      res.send(reportedSurveys);
+      res.send({ reportedSurveys, reports });
+    });
+
+    // post a comment
+    app.post("/comments", async (req, res) => {
+      const comment = req.body;
+      const result = await commentCollections.insertOne(comment);
+      res.send(result);
     });
 
     // Send a ping to confirm a successful connection
