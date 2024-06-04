@@ -88,6 +88,14 @@ async function run() {
       res.send(result);
     });
 
+    // participated surveys
+    app.get("/surveys/voted/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { feedback: { $elemMatch: { email: email } } };
+      const result = await surveyCollections.find(query).toArray();
+      res.send(result);
+    });
+
     // update survey by id
     app.put("/surveys/update/:id", async (req, res) => {
       const id = req.params.id;
