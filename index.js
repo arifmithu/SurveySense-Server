@@ -28,6 +28,7 @@ async function run() {
 
     const surveyCollections = client.db("SurveySense").collection("Surveys");
     const userCollections = client.db("SurveySense").collection("Users");
+    const reportCollections = client.db("SurveySense").collection("Reports");
 
     //  ------------------jwt related api----------------
     app.post("/jwt", async (req, res) => {
@@ -109,6 +110,36 @@ async function run() {
       };
       const result = await surveyCollections.updateOne(query, updatedSurvey);
       res.send(result);
+    });
+
+    // voting api
+    app.put("/surveys/vote/:id", async (req, res) => {
+      const id = req.params.id;
+      const vote = req.body;
+      const query = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $push: {
+          feedback: vote,
+        },
+        $inc: { response: 1 },
+      };
+      const result = await surveyCollections.updateOne(query, updatedDoc);
+      res.send(result);
+    });
+
+    // report survey
+    app.post("/reports", async (req, res) => {
+      const report = req.body;
+      const query = { email: report.email, postId: report.postId };
+      const alreadyReported = await reportCollections.findOne(query);
+      if (alreadyReported) {
+        res
+          .status(400)
+          .send({ message: "You have already reported this survey" });
+      } else {
+        const result = await reportCollections.insertOne(report);
+        res.status(200).send(result);
+      }
     });
 
     // Send a ping to confirm a successful connection
