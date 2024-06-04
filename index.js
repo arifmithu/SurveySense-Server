@@ -150,6 +150,20 @@ async function run() {
       }
     });
 
+    // get reported surveys
+    app.get("/surveys/reported/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const result = await reportCollections.find(query).toArray();
+      const reportedSurveys = [];
+      for (const e of result) {
+        const cursor = { _id: new ObjectId(e.postId) };
+        const survey = await surveyCollections.findOne(cursor);
+        reportedSurveys.push(survey);
+      }
+      res.send(reportedSurveys);
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
