@@ -80,6 +80,15 @@ async function run() {
       const result = await surveyCollections.find().toArray();
       res.send(result);
     });
+    // get top 6 voted surveys
+    app.get("/topSurveys", async (req, res) => {
+      const topSurveys = await surveyCollections
+        .find()
+        .sort({ response: -1 })
+        .limit(6)
+        .toArray();
+      res.send(topSurveys);
+    });
 
     // get surveys of specific surveyor
     app.get("/surveys/:email", async (req, res) => {
@@ -217,10 +226,16 @@ async function run() {
       }
     });
     // get specific user to update status
-    app.get("/users/targetUser/:id", async (req, res) => {
+    app.put("/users/targetUser/:id", async (req, res) => {
       const id = req.params.id;
+      const role = req.body;
       const query = { _id: new ObjectId(id) };
-      const result = await userCollections.findOne(query);
+      const updatedDoc = {
+        $set: {
+          role: role.newRole,
+        },
+      };
+      const result = await userCollections.updateOne(query, updatedDoc);
       res.send(result);
     });
 
