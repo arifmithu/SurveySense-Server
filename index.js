@@ -216,6 +216,13 @@ async function run() {
         res.send(result);
       }
     });
+    // get specific user to update status
+    app.get("/users/targetUser/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await userCollections.findOne(query);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
