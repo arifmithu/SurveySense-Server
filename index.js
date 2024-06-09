@@ -7,7 +7,15 @@ const moment = require("moment");
 const app = express();
 const port = process.env.PORT || 5000;
 
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173",
+      "https://surveysense-ec8e6.web.app",
+      "https://surveysense-ec8e6.firebaseapp.com",
+    ],
+  })
+);
 app.use(express.json());
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.c4qvddn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -24,7 +32,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const surveyCollections = client.db("SurveySense").collection("Surveys");
     const userCollections = client.db("SurveySense").collection("Users");
@@ -172,8 +180,45 @@ async function run() {
       res.send(result);
     });
 
+    // get and show comments
+    app.get("/comments/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { postId: id };
+      const result = await commentCollections.find(query).toArray();
+      res.send(result);
+    });
+
+    // get all surveys where a specific pro user commented
+    app.get("/comments/all/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      const comments = await commentCollections.find(query).toArray();
+      const commentedSurveys = [];
+      for (const e of comments) {
+        const cursor = { _id: new ObjectId(e.postId) };
+        const survey = await surveyCollections.findOne(cursor);
+        commentedSurveys.push(survey);
+        console.log(cursor, "cursor");
+      }
+      res.send({ commentedSurveys, comments });
+    });
+
+    //  ------------------users related api----------------
+    app.get("/users/all/:type", async (req, res) => {
+      const usersType = req.params.type;
+      console.log(usersType);
+      const query = { role: usersType };
+      if (usersType == "all") {
+        const result = await userCollections.find().toArray();
+        res.send(result);
+      } else {
+        const result = await userCollections.find(query).toArray();
+        res.send(result);
+      }
+    });
+
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
