@@ -38,6 +38,9 @@ async function run() {
     const userCollections = client.db("SurveySense").collection("Users");
     const reportCollections = client.db("SurveySense").collection("Reports");
     const commentCollections = client.db("SurveySense").collection("Comments");
+    const testimonialCollections = client
+      .db("SurveySense")
+      .collection("testimonials");
 
     //  ------------------jwt related api----------------
     app.post("/jwt", async (req, res) => {
@@ -236,6 +239,13 @@ async function run() {
         },
       };
       const result = await userCollections.updateOne(query, updatedDoc);
+      res.send(result);
+    });
+
+    //  ------------------testimonials related api----------------
+
+    app.get("/testimonials", async (res, req) => {
+      const result = await testimonialCollections.find().toArray();
       res.send(result);
     });
 
