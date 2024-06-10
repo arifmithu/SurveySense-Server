@@ -51,6 +51,21 @@ async function run() {
       res.send({ token });
     });
 
+    // middlewares
+    const verifyToken = (req, res, next) => {
+      if (!req.headers.authorization) {
+        return res.status(401).send({ message: "Unauthorized access" });
+      }
+      const token = req.headers.authorization.split(" ")[1];
+      jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+          return res.status(401).send({ message: "Unauthorized access" });
+        }
+        req.decoded = decoded;
+        next();
+      });
+    };
+
     //  ------------------user related api----------------
     // post user
     app.post("/users", async (req, res) => {
@@ -62,7 +77,6 @@ async function run() {
     // get user role
     app.get("/users/:email", async (req, res) => {
       const loggedEmail = req.params.email;
-      console.log("inside email api");
       const query = { email: loggedEmail };
       const result = await userCollections.findOne(query);
       res.send(result);
@@ -85,13 +99,27 @@ async function run() {
     });
     // get surveys by category
     app.get("/surveys/all/:category", async (req, res) => {
-      const query = req.params.category;
-      if (query == "all") {
+      const surveyType = req.params.category;
+      const sort = req.query.sortType;
+      const query = { category: surveyType };
+      if (surveyType == "all") {
         const result = await surveyCollections.find().toArray();
-        res.send(result);
+        if (sort == "ascending") {
+          result.sort((a, b) => a.response - b.response);
+          res.send(result);
+        } else {
+          result.sort((a, b) => b.response - a.response);
+          res.send(result);
+        }
       } else {
         const result = await surveyCollections.find(query).toArray();
-        res.send(result);
+        if (sort == "ascending") {
+          result.sort((a, b) => a.response - b.response);
+          res.send(result);
+        } else {
+          result.sort((a, b) => b.response - a.response);
+          res.send(result);
+        }
       }
     });
     // get top 6 voted surveys
@@ -105,7 +133,7 @@ async function run() {
     });
 
     // get surveys of specific surveyor
-    app.get("/surveys/:email", async (req, res) => {
+    app.get("/surveys/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
       const result = await surveyCollections.find(query).toArray();
@@ -113,7 +141,7 @@ async function run() {
     });
 
     // get survey by id
-    app.get("/response/:id", async (req, res) => {
+    app.get("/response/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await surveyCollections.findOne(query);
@@ -121,7 +149,7 @@ async function run() {
     });
 
     // participated surveys
-    app.get("/surveys/voted/:email", async (req, res) => {
+    app.get("/surveys/voted/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
       const query = { feedback: { $elemMatch: { email: email } } };
       const result = await surveyCollections.find(query).toArray();
@@ -129,7 +157,7 @@ async function run() {
     });
 
     // update survey by id
-    app.put("/surveys/update/:id", async (req, res) => {
+    app.put("/surveys/update/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const survey = req.body;
       const query = { _id: new ObjectId(id) };
@@ -153,7 +181,7 @@ async function run() {
     });
 
     // voting api
-    app.put("/surveys/vote/:id", async (req, res) => {
+    app.put("/surveys/vote/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const vote = req.body;
       const query = { _id: new ObjectId(id) };
@@ -168,7 +196,7 @@ async function run() {
     });
 
     // report survey
-    app.post("/reports", async (req, res) => {
+    app.post("/reports", verifyToken, async (req, res) => {
       const report = req.body;
       const query = { email: report.email, postId: report.postId };
       const alreadyReported = await reportCollections.findOne(query);
@@ -183,7 +211,7 @@ async function run() {
     });
 
     // get reported surveys
-    app.get("/surveys/reported/:email", async (req, res) => {
+    app.get("/surveys/reported/:email", verifyToken, async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
       const reports = await reportCollections.find(query).toArray();
@@ -197,7 +225,7 @@ async function run() {
     });
 
     // post a comment
-    app.post("/comments", async (req, res) => {
+    app.post("/comments", verifyToken, async (req, res) => {
       const comment = req.body;
       const result = await commentCollections.insertOne(comment);
       res.send(result);
@@ -227,7 +255,9 @@ async function run() {
     });
 
     //  ------------------users related api----------------
-    app.get("/users/all/:type", async (req, res) => {
+
+    // get user by role
+    app.get("/users/all/:type", verifyToken, async (req, res) => {
       const usersType = req.params.type;
       console.log(usersType);
       const query = { role: usersType };
@@ -240,7 +270,7 @@ async function run() {
       }
     });
     // get specific user to update status
-    app.put("/users/targetUser/:id", async (req, res) => {
+    app.put("/users/targetUser/:id", verifyToken, async (req, res) => {
       const id = req.params.id;
       const role = req.body;
       const query = { _id: new ObjectId(id) };
