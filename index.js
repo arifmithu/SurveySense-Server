@@ -83,6 +83,17 @@ async function run() {
       const result = await surveyCollections.find().toArray();
       res.send(result);
     });
+    // get surveys by category
+    app.get("/surveys/all/:category", async (req, res) => {
+      const query = req.params.category;
+      if (query == "all") {
+        const result = await surveyCollections.find().toArray();
+        res.send(result);
+      } else {
+        const result = await surveyCollections.find(query).toArray();
+        res.send(result);
+      }
+    });
     // get top 6 voted surveys
     app.get("/topSurveys", async (req, res) => {
       const topSurveys = await surveyCollections
@@ -244,7 +255,7 @@ async function run() {
 
     //  ------------------testimonials related api----------------
 
-    app.get("/testimonials", async (res, req) => {
+    app.get("/testimonials", async (req, res) => {
       const result = await testimonialCollections.find().toArray();
       res.send(result);
     });
