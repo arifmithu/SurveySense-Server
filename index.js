@@ -40,6 +40,9 @@ async function run() {
     const reportCollections = client.db("SurveySense").collection("Reports");
     const commentCollections = client.db("SurveySense").collection("Comments");
     const paymentCollection = client.db("SurveySense").collection("Payments");
+    const feedbackOnUnpublishCollection = client
+      .db("SurveySense")
+      .collection("Feedback");
     const testimonialCollections = client
       .db("SurveySense")
       .collection("testimonials");
@@ -312,6 +315,24 @@ async function run() {
       res.send({ paymentResult });
     });
 
+    app.get("/payments", async (req, res) => {
+      const payments = await paymentCollection.find().toArray();
+      res.send(payments);
+    });
+
+    // feedback on unpublish surveys
+    app.post("/feedbacks", async (req, res) => {
+      const feedback = req.body;
+      const result = await feedbackOnUnpublishCollection.insertOne(feedback);
+      res.send(result);
+    });
+    // get feedbacks by email
+    app.get("/feedbacks/:email", async (req, res) => {
+      const loggedEmail = req.params.email;
+      const query = { email: loggedEmail };
+      const result = await feedbackOnUnpublishCollection.find(query).toArray();
+      res.send(result);
+    });
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
     console.log(
