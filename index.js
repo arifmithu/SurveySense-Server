@@ -2,6 +2,7 @@ const express = require("express");
 require("dotenv").config();
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const moment = require("moment");
 const app = express();
@@ -38,6 +39,7 @@ async function run() {
     const userCollections = client.db("SurveySense").collection("Users");
     const reportCollections = client.db("SurveySense").collection("Reports");
     const commentCollections = client.db("SurveySense").collection("Comments");
+    const paymentCollection = client.db("SurveySense").collection("Payments");
     const testimonialCollections = client
       .db("SurveySense")
       .collection("testimonials");
@@ -74,7 +76,7 @@ async function run() {
       const result = await userCollections.insertOne(user);
       res.send(result);
     });
-    // get user role
+    // get user
     app.get("/users/:email", async (req, res) => {
       const loggedEmail = req.params.email;
       const query = { email: loggedEmail };
@@ -141,7 +143,7 @@ async function run() {
     });
 
     // get survey by id
-    app.get("/response/:id", verifyToken, async (req, res) => {
+    app.get("/response/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await surveyCollections.findOne(query);
@@ -288,6 +290,26 @@ async function run() {
     app.get("/testimonials", async (req, res) => {
       const result = await testimonialCollections.find().toArray();
       res.send(result);
+    });
+
+    // payment intent
+    app.post("/create-payment-intent", async (req, res) => {
+      const { price } = req.body;
+      const amount = parseInt(price * 100);
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        payment_method_types: ["card"],
+      });
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
+
+    app.post("/payments", async (req, res) => {
+      const payment = req.body;
+      const paymentResult = await paymentCollection.insertOne(payment);
+      res.send({ paymentResult });
     });
 
     // Send a ping to confirm a successful connection
